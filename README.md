@@ -1,7 +1,7 @@
 ansible-role-ec2
 ================
 
-Ansible role used to provision ec2 instances
+Ansible role used to provision EC2 instances
 
 Requirements
 ------------
