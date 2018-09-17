@@ -1,2 +1,9 @@
 ---
 # vars file for ansible-role-ec2
+
+__aws_ec2_default:
+  volumes:
+    - device_name: /dev/sda1
+      delete_on_termination: yes
+      volume_type: gp2
+      volume_size: 10
