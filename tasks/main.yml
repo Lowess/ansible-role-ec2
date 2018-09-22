@@ -60,7 +60,7 @@
   # Determine EC2 instance subnets
   - name: Determine the EC2 instance subnets placement
     ec2_vpc_subnet_facts:
-      filters: "{{ item.0 | combine(item.1.subnet | default({'mapPublicIpOnLaunch': true})) }}"
+      filters: "{{ item.0 | combine(item.1.subnet | default({'mapPublicIpOnLaunch': 'True'})) }}"
     register: __aws_vpc_subnet_facts
     with_together:
       - "{{ __aws_vpc_subnet_filters }}"
