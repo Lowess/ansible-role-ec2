@@ -1,2 +1,39 @@
 ---
 # defaults file for ansible-role-ec2
+
+### Settings related all instances
+
+aws_ec2_region: us-east-1
+
+# Name of the VPC
+# aws_ec2_vpc: ccm
+
+# What kind of AMI should be used ?
+aws_ec2_ami_prefix: 'ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*'
+
+# Which Keypair should be used ?
+aws_ec2_keypair: '~/.ssh/aws-educate.pub'
+
+### Settings per instance
+
+# What should be started ?
+aws_ec2_placement:
+  - count: 1
+    size: t2.micro
+    az: us-east-1b
+    tags:
+      Name: 'bastion-1b'
+
+########################################################################################################################
+### Settings related to the security groups
+########################################################################################################################
+
+# Which security groups should be attached to the instance
+aws_ec2_groups:
+  ops:
+    description: SSH access to instances
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0

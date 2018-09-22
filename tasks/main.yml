@@ -1,2 +1,120 @@
 ---
 # tasks file for ansible-role-ec2
+
+- block:
+  # Determine VPC
+  - name: Gather VPC facts
+    ec2_vpc_net_facts:
+      filters:
+        "tag:Name": "{{ aws_ec2_vpc | default(omit) }}"
+    register: __aws_vpcs
+
+  - name: Register current VPC
+    set_fact:
+      __aws_vpc: "{{ __aws_vpcs.vpcs | first }}"
+
+  - name: Show VPC facts
+    debug:
+      msg: "{{ __aws_vpc }}"
+      verbosity: 2
+
+  # Ensure a keypair exists
+  - name: Import EC2 keypair
+    ec2_key:
+      state: present
+      region: "{{ aws_ec2_region }}"
+      name: "{{ aws_ec2_keypair | basename | splitext | first }}"
+      key_material: "{{ lookup('file', aws_ec2_keypair) }}"
+
+  # Determine AMI
+  - name: Lookup AMI Id from Cannonical matching the given prefix
+    ec2_ami_facts:
+      region: "{{ aws_ec2_region }}"
+      owners: 099720109477
+      filters:
+        name: "{{ aws_ec2_ami_prefix }}"
+    register: __aws_ec2_amis
+    no_log: true
+
+  - name: Register the latest AMI Id
+    set_fact:
+      __aws_ec2_latest_ami: "{{ __aws_ec2_amis.images | sort(attribute='creation_date') | last }}"
+
+  - name: Show the latest AMI facts
+    debug:
+      msg: "{{ __aws_ec2_latest_ami }}"
+
+  - name: Set VPC subnet filter items
+    set_fact:
+      __aws_vpc_subnet_filter_item:
+        'vpc-id': "{{ __aws_vpc.vpc_id }}"
+        'availabilityZone': "{{ item.az | default(omit) }}"
+    with_items: "{{ aws_ec2_placement }}"
+    register: __aws_vpc_subnet_filter_result
+
+  - name: Set subnet filter list
+    set_fact:
+      __aws_vpc_subnet_filters: "{{ __aws_vpc_subnet_filter_result.results | map(attribute='ansible_facts.__aws_vpc_subnet_filter_item') | list }}"
+
+  # Determine EC2 instance subnets
+  - name: Determine the EC2 instance subnets placement
+    ec2_vpc_subnet_facts:
+      filters: "{{ item.0 | combine(item.1.subnet | default({})) }}"
+    register: __aws_vpc_subnet_facts
+    with_together:
+      - "{{ __aws_vpc_subnet_filters }}"
+      - "{{ aws_ec2_placement }}"
+
+  - name: Register subnet ids
+    set_fact:
+      __aws_vpc_subnets: "{{ __aws_vpc_subnet_facts.results | sum(attribute='subnets', start=[]) | list }}"
+
+  - name: Show Subnet Ids
+    debug:
+      msg: "{{ __aws_vpc_subnets  }}"
+      verbosity: 2
+
+  - name: Create EC2 security groups
+    ec2_group:
+      region: "{{ aws_ec2_region }}"
+      vpc_id: "{{ __aws_vpc.vpc_id }}"
+      name: "{{ item.key }}"
+      description: "{{ item.value.description }}"
+      rules: "{{ item.value.rules }}"
+    with_dict: "{{ aws_ec2_groups }}"
+
+  - name: Provision EC2 server
+    ec2:
+      region: "{{ aws_ec2_region }}"
+      key_name: "{{ aws_ec2_keypair | basename | splitext | first }}"
+      image: "{{ __aws_ec2_latest_ami.image_id }}"
+      instance_type: "{{ item.0.size }}"
+      instance_tags: "{{ item.0.tags }}"
+      volumes: "{{ item.0.volumes | default(__aws_ec2_default.volumes) }}"
+      groups: "{{ aws_ec2_groups.keys() }}"
+      vpc_subnet_id: "{{ item.1 }}"
+      exact_count: "{{ item.0.count }}"
+      count_tag: "{{ item.0.tags }}"
+      wait: yes
+    register: ec2
+    with_together:
+      - "{{ aws_ec2_placement }}"
+      - "{{ __aws_vpc_subnets | map(attribute='subnet_id') | list }}"
+
+  - name: Wait for SSH to come up
+    wait_for:
+      state: started
+      host: "{{ item.1.public_dns_name }}"
+      port: 22
+      delay: 60
+      timeout: 640
+    with_subelements:
+      - "{{ ec2.results }}"
+      - instances
+
+  delegate_to: localhost
+
+  rescue:
+    - name: Something went wrong with the EC2 provision
+      fail:
+        msg: "Could not find an AMI matching the pattern: {{ aws_ec2_ami_prefix }}"

@@ -2,6 +2,7 @@ dependencies: []
 
 galaxy_info:
   author: Florian DAMBRINE
+  role_name: ec2
   description: AWS EC2 provisioning role
   company: GrandsEnsemble Florian DAMBRINE
 
