@@ -43,6 +43,7 @@
   - name: Show the latest AMI facts
     debug:
       msg: "{{ __aws_ec2_latest_ami }}"
+      verbosity: 2
 
   - name: Set VPC subnet filter items
     set_fact:
