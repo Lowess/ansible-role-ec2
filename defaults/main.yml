@@ -9,7 +9,7 @@ aws_ec2_region: us-east-1
 # aws_ec2_vpc: ccm
 
 # What kind of AMI should be used ?
-aws_ec2_ami_prefix: 'ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*'
+aws_ec2_ami_prefix: 'ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*'
 
 # Which Keypair should be used ?
 aws_ec2_keypair: '~/.ssh/aws-educate.pub'
