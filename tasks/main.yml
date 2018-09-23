@@ -2,6 +2,7 @@
 # tasks file for ansible-role-ec2
 
 - block:
+
   # Determine VPC
   - name: Gather VPC facts
     ec2_vpc_net_facts:
@@ -114,8 +115,3 @@
       - instances
 
   delegate_to: localhost
-
-  rescue:
-    - name: Something went wrong with the EC2 provision
-      fail:
-        msg: "Could not find an AMI matching the pattern: {{ aws_ec2_ami_prefix }}"
