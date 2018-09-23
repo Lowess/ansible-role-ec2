@@ -93,7 +93,7 @@
       instance_type: "{{ item.0.size }}"
       instance_tags: "{{ item.0.tags }}"
       volumes: "{{ item.0.volumes | default(__aws_ec2_default.volumes) }}"
-      groups: "{{ aws_ec2_groups.keys() }}"
+      groups: "{{ item.0.groups }}"
       vpc_subnet_id: "{{ item.1 }}"
       exact_count: "{{ item.0.count }}"
       count_tag: "{{ item.0.tags }}"

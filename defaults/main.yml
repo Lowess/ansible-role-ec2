@@ -21,6 +21,8 @@ aws_ec2_placement:
   - count: 1
     size: t2.micro
     az: us-east-1b
+    groups:
+      - ops
     tags:
       Name: 'bastion-1b'
 
@@ -28,7 +30,7 @@ aws_ec2_placement:
 ### Settings related to the security groups
 ########################################################################################################################
 
-# Which security groups should be attached to the instance
+# Security groups that should created before provisioning the instance
 aws_ec2_groups:
   ops:
     description: SSH access to instances
