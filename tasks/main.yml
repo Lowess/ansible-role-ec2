@@ -83,6 +83,9 @@
       name: "{{ item.key }}"
       description: "{{ item.value.description }}"
       rules: "{{ item.value.rules }}"
+      purge_tags: yes
+      tags:
+        Name: "{{ item.key }}"
     with_dict: "{{ aws_ec2_groups }}"
 
   - name: Provision EC2 server
